@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Plataforma Cooperativo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        h1 {
+            color: #4cc9f0;
+            text-shadow: 0 0 10px rgba(76, 201, 240, 0.5);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            color: #a9a9a9;
+            margin-bottom: 15px;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        #gameCanvas {
+            background-color: #0f3460;
+            border-radius: 10px;
+            border: 3px solid #4cc9f0;
+            box-shadow: 0 0 20px rgba(76, 201, 240, 0.3);
+            display: block;
+            width: 100%;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+            background-color: rgba(15, 52, 96, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #2d4059;
+        }
+        
+        .player-controls {
+            flex: 1;
+            padding: 0 15px;
+        }
+        
+        .player-title {
+            color: #f72585;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .player2 .player-title {
+            color: #4cc9f0;
+        }
+        
+        .key {
+            display: inline-block;
+            background-color: #2d4059;
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin: 2px;
+            border: 1px solid #4a648a;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+            background-color: rgba(15, 52, 96, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #2d4059;
+        }
+        
+        .info-box {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .info-title {
+            color: #a9a9a9;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .player1-color {
+            color: #f72585;
+        }
+        
+        .player2-color {
+            color: #4cc9f0;
+        }
+        
+        .instructions {
+            max-width: 800px;
+            margin-top: 20px;
+            background-color: rgba(15, 52, 96, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #2d4059;
+        }
+        
+        .instructions h3 {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        .restart-btn {
+            background-color: #f72585;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .restart-btn:hover {
+            background-color: #b5179e;
+            transform: scale(1.05);
+        }
+        
+        .victory-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            z-index: 10;
+            display: none;
+        }
+        
+        .victory-title {
+            font-size: 3rem;
+            color: #4cc9f0;
+            text-shadow: 0 0 10px rgba(76, 201, 240, 0.8);
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Jogo Cooperativo de Plataforma</h1>
+        <p class="subtitle">Colete as chaves juntos para abrir a porta e avançar para o próximo nível!</p>
+    </div>
+    
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        
+        <div class="victory-screen" id="victoryScreen">
+            <h2 class="victory-title">Nível Concluído!</h2>
+            <p>Parabéns! Vocês cooperaram bem!</p>
+            <button class="restart-btn" id="nextLevelBtn">Próximo Nível</button>
+        </div>
+    </div>
+    
+    <div class="game-info">
+        <div class="info-box">
+            <div class="info-title">JOGADOR 1</div>
+            <div class="info-value player1-color" id="player1Keys">0/3</div>
+        </div>
+        <div class="info-box">
+            <div class="info-title">NÍVEL</div>
+            <div class="info-value" id="level">1</div>
+        </div>
+        <div class="info-box">
+            <div class="info-title">JOGADOR 2</div>
+            <div class="info-value player2-color" id="player2Keys">0/3</div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div class="player-controls player1">
+            <div class="player-title">JOGADOR 1 (ROSA)</div>
+            <div>
+                <span class="key">W</span> para pular<br>
+                <span class="key">A</span> <span class="key">D</span> para mover
+            </div>
+        </div>
+        
+        <div class="player-controls player2">
+            <div class="player-title">JOGADOR 2 (AZUL)</div>
+            <div>
+                <span class="key">↑</span> para pular<br>
+                <span class="key">←</span> <span class="key">→</span> para mover
+            </div>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>Como Jogar:</h3>
+        <ul>
+            <li>Os jogadores precisam coletar todas as <strong>chaves</strong> (amarelas) para abrir a porta (verde)</li>
+            <li>Cada jogador precisa de 3 chaves para abrir a porta</li>
+            <li>Os jogadores podem se ajudar subindo em plataformas e ativando alavancas</li>
+            <li>Cuidado com os obstáculos vermelhos!</li>
+        </ul>
+        <button class="restart-btn" id="restartBtn">Reiniciar Nível</button>
+    </div>
+
+    <script>
+        // Configuração do jogo
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const victoryScreen = document.getElementById('victoryScreen');
+        const nextLevelBtn = document.getElementById('nextLevelBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const player1KeysElement = document.getElementById('player1Keys');
+        const player2KeysElement = document.getElementById('player2Keys');
+        const levelElement = document.getElementById('level');
+
+        // Estado do jogo
+        let currentLevel = 1;
+        let gameRunning = true;
+        
+        // Objetos do jogo
+        const players = [
+            {
+                x: 50,
+                y: 400,
+                width: 30,
+                height: 40,
+                color: '#f72585',
+                speed: 5,
+                jumpForce: 15,
+                velocityY: 0,
+                isGrounded: false,
+                keys: 0,
+                maxKeys: 3
+            },
+            {
+                x: 100,
+                y: 400,
+                width: 30,
+                height: 40,
+                color: '#4cc9f0',
+                speed: 5,
+                jumpForce: 15,
+                velocityY: 0,
+                isGrounded: false,
+                keys: 0,
+                maxKeys: 3
+            }
+        ];
+        
+        // Plataformas (x, y, width, height)
+        let platforms = [];
+        
+        // Chaves (x, y, coletada)
+        let keys = [];
+        
+        // Porta
+        let door = {
+            x: 700,
+            y: 300,
+            width: 40,
+            height: 70,
+            open: false
+        };
+        
+        // Obstáculos (x, y, width, height)
+        let obstacles = [];
+        
+        // Alavancas (x, y, ativada)
+        let levers = [];
+        
+        // Controles
+        const keysPressed = {
+            w: false,
+            a: false,
+            d: false,
+            arrowup: false,
+            arrowleft: false,
+            arrowright: false
+        };
+        
+        // Inicializar níveis
+        function initLevel(level) {
+            platforms = [];
+            keys = [];
+            obstacles = [];
+            levers = [];
+            
+            // Configurações base para todos os níveis
+            platforms.push({x: 0, y: 450, width: 800, height: 50}); // Chão
+            
+            if (level === 1) {
+                // Plataformas
+                platforms.push({x: 100, y: 350, width: 150, height: 20});
+                platforms.push({x: 300, y: 300, width: 150, height: 20});
+                platforms.push({x: 500, y: 250, width: 150, height: 20});
+                
+                // Chaves
+                keys.push({x: 150, y: 310, collected: false});
+                keys.push({x: 350, y: 260, collected: false});
+                keys.push({x: 550, y: 210, collected: false});
+                keys.push({x: 200, y: 410, collected: false});
+                keys.push({x: 400, y: 410, collected: false});
+                keys.push({x: 600, y: 410, collected: false});
+                
+                // Obstáculos
+                obstacles.push({x: 250, y: 420, width: 30, height: 30});
+                obstacles.push({x: 450, y: 420, width: 30, height: 30});
+                
+                // Alavancas
+                levers.push({x: 650, y: 420, activated: false});
+                
+                // Posição dos jogadores
+                players[0].x = 50;
+                players[0].y = 400;
+                players[1].x = 100;
+                players[1].y = 400;
+                
+                // Resetar chaves dos jogadores
+                players[0].keys = 0;
+                players[1].keys = 0;
+                
+            } else if (level === 2) {
+                // Nível 2 - mais desafiador
+                platforms.push({x: 50, y: 350, width: 120, height: 20});
+                platforms.push({x: 220, y: 320, width: 120, height: 20});
+                platforms.push({x: 390, y: 280, width: 120, height: 20});
+                platforms.push({x: 560, y: 250, width: 120, height: 20});
+                platforms.push({x: 650, y: 350, width: 100, height: 20});
+                
+                // Chaves
+                keys.push({x: 100, y: 310, collected: false});
+                keys.push({x: 270, y: 280, collected: false});
+                keys.push({x: 440, y: 240, collected: false});
+                keys.push({x: 610, y: 210, collected: false});
+                keys.push({x: 700, y: 310, collected: false});
+                keys.push({x: 300, y: 410, collected: false});
+                
+                // Obstáculos
+                obstacles.push({x: 350, y: 420, width: 30, height: 30});
+                obstacles.push({x: 500, y: 420, width: 30, height: 30});
+                obstacles.push({x: 200, y: 290, width: 30, height: 30});
+                
+                // Alavancas
+                levers.push({x: 50, y: 410, activated: false});
+                levers.push({x: 750, y: 410, activated: false});
+                
+                // Posição dos jogadores
+                players[0].x = 50;
+                players[0].y = 400;
+                players[1].x = 120;
+                players[1].y = 400;
+                
+                // Resetar chaves dos jogadores
+                players[0].keys = 0;
+                players[1].keys = 0;
+            }
+            
+            // Posição da porta
+            door.x = 700;
+            door.y = level === 1 ? 300 : 230;
+            door.open = false;
+            
+            // Atualizar UI
+            levelElement.textContent = level;
+            updateKeyUI();
+        }
+        
+        // Atualizar UI das chaves
+        function updateKeyUI() {
+            player1KeysElement.textContent = `${players[0].keys}/${players[0].maxKeys}`;
+            player2KeysElement.textContent = `${players[1].keys}/${players[1].maxKeys}`;
+        }
+        
+        // Verificar colisão entre dois retângulos
+        function rectCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        // Atualizar estado do jogo
+        function update() {
+            if (!gameRunning) return;
+            
+            // Aplicar gravidade
+            players.forEach(player => {
+                player.velocityY += 0.8; // Gravidade
+                player.y += player.velocityY;
+                
+                // Verificar colisão com o chão
+                if (player.y + player.height > canvas.height) {
+                    player.y = canvas.height - player.height;
+                    player.velocityY = 0;
+                    player.isGrounded = true;
+                } else {
+                    player.isGrounded = false;
+                }
+                
+                // Verificar colisão com plataformas
+                platforms.forEach(platform => {
+                    if (player.x + player.width > platform.x &&
+                        player.x < platform.x + platform.width &&
+                        player.y + player.height > platform.y &&
+                        player.y + player.height < platform.y + platform.height + player.velocityY &&
+                        player.velocityY > 0) {
+                        
+                        player.y = platform.y - player.height;
+                        player.velocityY = 0;
+                        player.isGrounded = true;
+                    }
+                });
+                
+                // Verificar colisão com obstáculos (morte)
+                obstacles.forEach(obstacle => {
+                    if (rectCollision(player, obstacle)) {
+                        // Reiniciar nível se tocar em obstáculo
+                        initLevel(currentLevel);
+                    }
+                });
+                
+                // Verificar colisão com chaves
+                keys.forEach(key => {
+                    if (!key.collected && 
+                        player.x + player.width > key.x &&
+                        player.x < key.x + 20 &&
+                        player.y + player.height > key.y &&
+                        player.y < key.y + 20) {
+                        
+                        key.collected = true;
+                        player.keys++;
+                        updateKeyUI();
+                    }
+                });
+                
+                // Verificar colisão com alavancas
+                levers.forEach(lever => {
+                    if (!lever.activated &&
+                        player.x + player.width > lever.x &&
+                        player.x < lever.x + 20 &&
+                        player.y + player.height > lever.y &&
+                        player.y < lever.y + 20) {
+                        
+                        lever.activated = true;
+                        // Ativar algo quando a alavanca for ativada
+                        // Exemplo: remover um obstáculo
+                        if (currentLevel === 1) {
+                            obstacles = []; // Remove todos os obstáculos no nível 1
+                        } else if (currentLevel === 2) {
+                            // No nível 2, a alavanca cria uma plataforma
+                            platforms.push({x: 200, y: 200, width: 100, height: 20});
+                        }
+                    }
+                });
+                
+                // Verificar se pode abrir a porta
+                if (!door.open && 
+                    players[0].keys >= players[0].maxKeys && 
+                    players[1].keys >= players[1].maxKeys) {
+                    door.open = true;
+                }
+                
+                // Verificar colisão com a porta (vitória)
+                if (door.open && 
+                    rectCollision(player, door)) {
+                    // Ambos os jogadores precisam estar na porta para vencer
+                    const player1AtDoor = rectCollision(players[0], door);
+                    const player2AtDoor = rectCollision(players[1], door);
+                    
+                    if (player1AtDoor && player2AtDoor) {
+                        victoryScreen.style.display = 'flex';
+                        gameRunning = false;
+                    }
+                }
+            });
+            
+            // Controles do jogador 1 (WASD)
+            if (keysPressed.w && players[0].isGrounded) {
+                players[0].velocityY = -players[0].jumpForce;
+            }
+            if (keysPressed.a) {
+                players[0].x -= players[0].speed;
+                // Limitar à tela
+                if (players[0].x < 0) players[0].x = 0;
+            }
+            if (keysPressed.d) {
+                players[0].x += players[0].speed;
+                // Limitar à tela
+                if (players[0].x + players[0].width > canvas.width) {
+                    players[0].x = canvas.width - players[0].width;
+                }
+            }
+            
+            // Controles do jogador 2 (Setas)
+            if (keysPressed.arrowup && players[1].isGrounded) {
+                players[1].velocityY = -players[1].jumpForce;
+            }
+            if (keysPressed.arrowleft) {
+                players[1].x -= players[1].speed;
+                // Limitar à tela
+                if (players[1].x < 0) players[1].x = 0;
+            }
+            if (keysPressed.arrowright) {
+                players[1].x += players[1].speed;
+                // Limitar à tela
+                if (players[1].x + players[1].width > canvas.width) {
+                    players[1].x = canvas.width - players[1].width;
+                }
+            }
+        }
+        
+        // Renderizar o jogo
+        function draw() {
+            // Limpar tela
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Desenhar plataformas
+            ctx.fillStyle = '#2d4059';
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                ctx.strokeStyle = '#4a648a';
+                ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+            });
+            
+            // Desenhar obstáculos
+            ctx.fillStyle = '#e63946';
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                // Desenhar um "X" nos obstáculos
+                ctx.strokeStyle = '#ff6b6b';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(obstacle.x + 5, obstacle.y + 5);
+                ctx.lineTo(obstacle.x + obstacle.width - 5, obstacle.y + obstacle.height - 5);
+                ctx.moveTo(obstacle.x + obstacle.width - 5, obstacle.y + 5);
+                ctx.lineTo(obstacle.x + 5, obstacle.y + obstacle.height - 5);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+            });
+            
+            // Desenhar alavancas
+            levers.forEach(lever => {
+                ctx.fillStyle = lever.activated ? '#4ade80' : '#f59e0b';
+                ctx.fillRect(lever.x, lever.y, 20, 30);
+                
+                // Desenhar a alavanca
+                ctx.fillStyle = '#78350f';
+                if (lever.activated) {
+                    ctx.fillRect(lever.x + 5, lever.y + 5, 10, 20);
+                } else {
+                    ctx.fillRect(lever.x + 5, lever.y + 10, 10, 15);
+                }
+            });
+            
+            // Desenhar chaves
+            keys.forEach(key => {
+                if (!key.collected) {
+                    // Desenhar chave amarela
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.arc(key.x + 10, key.y + 10, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Detalhe da chave
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(key.x + 5, key.y + 8, 10, 4);
+                }
+            });
+            
+            // Desenhar porta
+            ctx.fillStyle = door.open ? '#4ade80' : '#78716c';
+            ctx.fillRect(door.x, door.y, door.width, door.height);
+            ctx.strokeStyle = door.open ? '#16a34a' : '#57534e';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(door.x, door.y, door.width, door.height);
+            ctx.lineWidth = 1;
+            
+            // Detalhe da porta
+            if (!door.open) {
+                ctx.fillStyle = '#404040';
+                ctx.fillRect(door.x + 15, door.y + 10, 10, 50);
+                
+                // Mostrar requisitos da porta
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Arial';
+                ctx.fillText(`${players[0].keys}/${players[0].maxKeys}`, door.x + 5, door.y - 5);
+                ctx.fillText(`${players[1].keys}/${players[1].maxKeys}`, door.x + 25, door.y - 5);
+            } else {
+                // Porta aberta
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(door.x + 15, door.y + 10, 10, 50);
+            }
+            
+            // Desenhar jogadores
+            players.forEach((player, index) => {
+                ctx.fillStyle = player.color;
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+                
+                // Olhos dos jogadores
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(player.x + 8, player.y + 10, 5, 5);
+                ctx.fillRect(player.x + player.width - 13, player.y + 10, 5, 5);
+                
+                // Mostrar chaves coletadas acima do jogador
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(`${player.keys}/${player.maxKeys}`, player.x, player.y - 5);
+                
+                // Identificador do jogador
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Arial';
+                ctx.fillText(`J${index + 1}`, player.x + player.width/2 - 5, player.y + player.height/2 + 5);
+            });
+            
+            // Instruções na tela
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '14px Arial';
+            ctx.fillText('Colete 3 chaves cada para abrir a porta!', 20, 30);
+        }
+        
+        // Loop do jogo
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners para controles
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key in keysPressed) {
+                keysPressed[key] = true;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key in keysPressed) {
+                keysPressed[key] = false;
+            }
+        });
+        
+        // Botões
+        nextLevelBtn.addEventListener('click', () => {
+            victoryScreen.style.display = 'none';
+            currentLevel = currentLevel === 1 ? 2 : 1;
+            initLevel(currentLevel);
+            gameRunning = true;
+        });
+        
+        restartBtn.addEventListener('click', () => {
+            victoryScreen.style.display = 'none';
+            initLevel(currentLevel);
+            gameRunning = true;
+        });
+        
+        // Inicializar o jogo
+        initLevel(currentLevel);
+        gameLoop();
+    </script>
+</body>
+</html>
